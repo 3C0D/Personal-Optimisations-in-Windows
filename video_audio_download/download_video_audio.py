@@ -96,7 +96,7 @@ def get_download_path(source_type):
     Crée les dossiers nécessaires s'ils n'existent pas.
 
     Args:
-        source_type (str): Type de source ('youtube', 'youtube_audio', 'odysee', 'odysee_audio', 'generic', 'generic_audio')
+        source_type (str): Type de source ('youtube', 'youtube_audio', 'generic', 'generic_audio')
 
     Returns:
         str: Chemin complet vers le dossier de téléchargement
@@ -115,8 +115,6 @@ def get_download_path(source_type):
     # Créer le chemin complet selon le type de source
     if base_type == "youtube":
         path = os.path.join(downloads_folder, main_folder, "Youtube")
-    elif base_type == "odysee":
-        path = os.path.join(downloads_folder, main_folder, "Odysee")
     else:  # generic
         path = os.path.join(downloads_folder, main_folder, "Generic")
 
@@ -161,7 +159,7 @@ def check_and_export_cookies():
 
         try:
             # Try with Chrome first
-            cookies = browser_cookie3.chrome(domain_name=".youtube.com")
+            cookies = browser_cookie3.chrome()
             for cookie in cookies:
                 cookie_jar.set_cookie(cookie)
             cookie_jar.save()
@@ -194,21 +192,23 @@ def check_and_export_cookies():
 
 
 def update_yt_dlp():
-    """Update yt-dlp to stable version"""
+    """Update yt-dlp to stable version via uv"""
     try:
         print("\nChecking for yt-dlp updates...")
         print("Regular updates are necessary to bypass YouTube API changes.")
-        # Use pip to update yt-dlp since it was installed via pip
+        # Use uv to update yt-dlp (project uses uv, not pip)
         result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--upgrade", "yt-dlp"],
+            ["uv", "pip", "install", "--upgrade", "yt-dlp"],
             capture_output=True,
             text=True,
             check=False,
         )
         if result.returncode == 0:
+            output = result.stdout.lower()
             if (
-                "already up-to-date" in result.stdout.lower()
-                or "already satisfied" in result.stdout.lower()
+                "already up-to-date" in output
+                or "already satisfied" in output
+                or "audited" in output
             ):
                 print("yt-dlp is already up to date.")
             else:
@@ -230,54 +230,60 @@ def detect_kvs_sites(url):
         "www.pervertium.com",
         "tezfiles.com",
         "www.tezfiles.com",
+        "www.analdin.com",
         # Ajoutez d'autres sites KVS ici
     ]
-    
+
     domain = urlparse(url).netloc.lower()
-    
+
     for kvs_domain in kvs_sites:
         if domain == kvs_domain or domain.endswith("." + kvs_domain):
             print(f"Site KVS détecté: {domain}")
             return True
-    
+
     return False
 
 
 def download_kvs_video(url):
     """Télécharge une vidéo depuis un site KVS"""
     print("\nAnalyse de la vidéo KVS...")
-    
+
     # Déterminer le chemin de destination
     local_path = get_download_path("generic")
-    
+
     # Utiliser le fichier cookies s'il existe
-    cookies_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cookies.txt")
-    
+    cookies_file = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "cookies.txt"
+    )
+
     try:
         # Créer l'extracteur KVS
         extractor = KVSExtractor(cookies_file if os.path.exists(cookies_file) else None)
-        
+
         # Extraire les informations vidéo
         video_info = extractor.extract_video_info(url)
-        
-        if video_info and video_info['sources']:
+
+        if video_info and video_info["sources"]:
             print(f"Titre: {video_info['title']}")
             print(f"Sources trouvées: {len(video_info['sources'])}")
-            
-            for i, source in enumerate(video_info['sources']):
-                print(f"  {i+1}. {source}")
-            
+
+            for i, source in enumerate(video_info["sources"]):
+                print(f"  {i + 1}. {source}")
+
             # Télécharger automatiquement
             print("\nTéléchargement en cours...")
             success = extractor.download_video(video_info, local_path)
-            
+
             if success:
                 # Trouver le fichier téléchargé le plus récent
-                files = [f for f in os.listdir(local_path) if f.endswith('.mp4')]
+                files = [f for f in os.listdir(local_path) if f.endswith(".mp4")]
                 if files:
                     latest_file = os.path.join(
                         local_path,
-                        max(files, key=lambda x: os.path.getctime(os.path.join(local_path, x)))
+                        max(
+                            files,
+                            key=lambda x: os.path.getctime(os.path.join(local_path, x)),
+                        ),
                     )
                     print(f"Fichier téléchargé: {latest_file}")
                     open_file_explorer(latest_file)
@@ -290,7 +296,7 @@ def download_kvs_video(url):
             print("Aucune source vidéo trouvée")
             print("Tentative avec yt-dlp comme fallback...")
             download_generic_video_with_fallback(url)
-            
+
     except Exception as e:
         print(f"Erreur avec l'extracteur KVS: {e}")
         print("Tentative avec yt-dlp comme fallback...")
@@ -460,11 +466,6 @@ def is_valid_youtube_url(url):
     return bool(re.match(youtube_regex, url))
 
 
-def is_valid_odysee_url(url):
-    odysee_regex = r"https?://odysee\.com/([a-zA-Z0-9\-_@:]+)"
-    return bool(re.match(odysee_regex, url))
-
-
 def is_valid_instagram_url(url):
     instagram_regex = r"https?://(www\.)?instagram\.com/(p|reel|tv)/([a-zA-Z0-9_-]+)"
     return bool(re.match(instagram_regex, url))
@@ -472,7 +473,7 @@ def is_valid_instagram_url(url):
 
 def is_valid_url(url):
     """Vérifie si la chaîne est une URL valide"""
-    url_regex = r"^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$"
+    url_regex = r"^https?://[^\s]+"
     return bool(re.match(url_regex, url))
 
 
@@ -497,9 +498,6 @@ def get_url_from_clipboard():
         if is_valid_youtube_url(content):
             print("URL YouTube valide trouvée.")
             return ("youtube", content)
-        elif is_valid_odysee_url(content):
-            print("URL Odysee valide trouvée.")
-            return ("odysee", content)
         elif is_valid_instagram_url(content):
             print("URL Instagram valide trouvée.")
             return ("instagram", content)
@@ -577,14 +575,20 @@ def download_youtube_video(url):
 
     # Use cookies if available
     if use_cookies:
-        info_opts["cookiefile"] = cookies_file
-        print(f"Utilisation du fichier de cookies: {cookies_file}")
+        info_opts["cookiesfrombrowser"] = ("chrome", None, None, None)
 
     try:
         # Extraire les informations de la vidéo sans télécharger
         with yt_dlp.YoutubeDL(info_opts) as ydl:
             print("Extraction des informations de la vidéo...")
             info = ydl.extract_info(url, download=False)
+
+            if info is None:
+                raise Exception(
+                    "Impossible d'extraire les infos. "
+                    "Vidéo indisponible ou cookies expirés."
+                )
+
             video_title = info.get("title", "video")
 
             # Déterminer l'extension en fonction du type de téléchargement
@@ -791,10 +795,15 @@ def download_youtube_video(url):
             # Pas besoin de forcer le remplacement car on a déjà supprimé le fichier existant si nécessaire
 
             if use_cookies:
-                ydl_opts["cookiefile"] = cookies_file
+                ydl_opts["cookiesfrombrowser"] = ("chrome", None, None, None)
 
             # Télécharger la vidéo avec le format choisi
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            try:
+                ydl_instance = yt_dlp.YoutubeDL(ydl_opts)
+            except Exception:
+                ydl_opts.pop("cookiesfrombrowser", None)
+                ydl_instance = yt_dlp.YoutubeDL(ydl_opts)
+            with ydl_instance as ydl:
                 ydl.download([url])
                 # Vérifier le fichier réel (au cas où le nom aurait été modifié par yt-dlp)
                 file_ext = ".mp3" if download_type == "audio" else ".mp4"
@@ -937,7 +946,7 @@ def download_youtube_video(url):
             # Pas besoin de forcer le remplacement car on a déjà supprimé le fichier existant si nécessaire
 
             if use_cookies:
-                cmd.extend(["--cookies", cookies_file])
+                cmd.extend(["--cookies-from-browser", "chrome"])
 
             cmd.append(url)
 
@@ -976,297 +985,6 @@ def download_youtube_video(url):
         except Exception as e2:
             print(f"Toutes les tentatives ont échoué. Erreur finale : {str(e2)}")
             return
-
-
-def download_odysee_video(url):
-    """Télécharge une vidéo depuis Odysee avec options audio/vidéo et choix de qualité"""
-    print("\nAnalyse de la vidéo Odysee...")
-
-    # Demander à l'utilisateur s'il souhaite télécharger la vidéo ou seulement l'audio
-    print("\nQue souhaitez-vous télécharger ?")
-    print("1. Vidéo (avec audio)")
-    print("2. Audio uniquement (MP3)")
-
-    download_type = None
-    while download_type is None:
-        try:
-            choice = input(
-                "\nEntrez votre choix (1-2) ou appuyez sur Entrée pour la vidéo: "
-            )
-            if not choice.strip():
-                download_type = "video"
-            else:
-                choice = int(choice)
-                if choice == 1:
-                    download_type = "video"
-                elif choice == 2:
-                    download_type = "audio"
-                else:
-                    print("Veuillez entrer 1 ou 2")
-        except ValueError:
-            print("Veuillez entrer un nombre valide")
-
-    # Déterminer le chemin de destination en fonction du type de téléchargement
-    if download_type == "video":
-        local_path = get_download_path("odysee")
-    else:  # audio
-        local_path = get_download_path("odysee_audio")
-
-    # Essayer d'abord avec yt-dlp (méthode recommandée pour Odysee)
-    try:
-        print("Extraction des informations de la vidéo...")
-
-        # Options pour l'extraction des informations
-        info_opts = {
-            "noplaylist": True,
-            "nocheckcertificate": True,
-            "ignoreerrors": True,
-            "no_color": True,
-            "extractor_retries": 5,
-            "socket_timeout": 30,
-        }
-
-        with yt_dlp.YoutubeDL(info_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            video_title = info.get("title", "video_odysee")
-
-            # Nettoyer le titre pour le nom de fichier
-            clean_title = re.sub(r'[<>:"/\\|?*]', "_", video_title or "video_odysee")
-
-            # Déterminer l'extension en fonction du type de téléchargement
-            file_ext = ".mp3" if download_type == "audio" else ".mp4"
-            filename = f"{clean_title}{file_ext}"
-            filepath = os.path.join(local_path, filename)
-
-            # Vérifier si le fichier existe déjà
-            if os.path.exists(filepath):
-                print("\n" + "=" * 60)
-                print(f"ATTENTION: Le fichier '{filename}' existe déjà !")
-                print(f"Chemin: {filepath}")
-                print("=" * 60)
-
-                while True:
-                    choice = input("Voulez-vous remplacer ce fichier ? (o/n): ").lower()
-                    if choice in ["o", "oui", "y", "yes"]:
-                        print("Le fichier existant sera remplacé.")
-                        try:
-                            os.remove(filepath)
-                            print("Fichier existant supprimé.")
-                            break
-                        except Exception as e:
-                            print(f"Impossible de supprimer le fichier existant: {e}")
-                            return
-                    elif choice in ["n", "non", "no"]:
-                        print("Téléchargement annulé.")
-                        return
-                    else:
-                        print("Veuillez répondre par 'o' (oui) ou 'n' (non).")
-
-            # Configuration en fonction du type de téléchargement
-            if download_type == "video":
-                # Récupérer les formats disponibles pour la vidéo
-                available_formats = info.get("formats", [])
-                quality_options = get_available_video_qualities(available_formats)
-
-                if not quality_options:
-                    print(
-                        "Aucun format vidéo spécifique trouvé. Utilisation du format par défaut."
-                    )
-                    format_option = "best"
-                else:
-                    # Afficher les options de qualité disponibles
-                    print("\nFormats vidéo disponibles:")
-                    for i, option in enumerate(quality_options, 1):
-                        print(f"  {i}. {option['display_name']}")
-
-                    # Demander à l'utilisateur de choisir
-                    choice = None
-                    while choice is None:
-                        try:
-                            user_input = input(
-                                "\nChoisissez la qualité (numéro) ou appuyez sur Entrée pour la meilleure qualité: "
-                            )
-                            if not user_input.strip():
-                                choice = 1  # Meilleure qualité par défaut
-                            else:
-                                choice = int(user_input)
-                                if choice < 1 or choice > len(quality_options):
-                                    print(
-                                        f"Veuillez entrer un nombre entre 1 et {len(quality_options)}"
-                                    )
-                                    choice = None
-                        except ValueError:
-                            print("Veuillez entrer un nombre valide")
-
-                    # Récupérer le format choisi
-                    selected_option = quality_options[choice - 1]
-                    format_option = selected_option["format_string"]
-                    print(f"\nTéléchargement en {selected_option['display_name']}...")
-
-            else:  # Audio uniquement
-                # Options de qualité audio
-                audio_quality_options = [
-                    {"bitrate": "192", "display_name": "Haute qualité (192 kbps)"},
-                    {"bitrate": "128", "display_name": "Qualité standard (128 kbps)"},
-                    {"bitrate": "96", "display_name": "Basse qualité (96 kbps)"},
-                ]
-
-                # Afficher les options de qualité audio
-                print("\nFormats audio disponibles:")
-                for i, option in enumerate(audio_quality_options, 1):
-                    print(f"  {i}. {option['display_name']}")
-
-                # Demander à l'utilisateur de choisir
-                choice = None
-                while choice is None:
-                    try:
-                        user_input = input(
-                            "\nChoisissez la qualité audio (numéro) ou appuyez sur Entrée pour la meilleure qualité: "
-                        )
-                        if not user_input.strip():
-                            choice = 1  # Meilleure qualité par défaut
-                        else:
-                            choice = int(user_input)
-                            if choice < 1 or choice > len(audio_quality_options):
-                                print(
-                                    f"Veuillez entrer un nombre entre 1 et {len(audio_quality_options)}"
-                                )
-                                choice = None
-                    except ValueError:
-                        print("Veuillez entrer un nombre valide")
-
-                # Récupérer la qualité audio choisie
-                selected_audio_option = audio_quality_options[choice - 1]
-                audio_bitrate = selected_audio_option["bitrate"]
-                print(
-                    f"\nTéléchargement audio en {selected_audio_option['display_name']}..."
-                )
-
-                # Pour l'audio, on utilise le meilleur format audio disponible
-                format_option = "bestaudio/best"
-
-            # Options pour le téléchargement
-            ydl_opts = {
-                "format": format_option,
-                "outtmpl": os.path.join(local_path, "%(title)s.%(ext)s"),
-                "ffmpeg_location": r"C:\ffmpeg\bin",
-                "noplaylist": True,
-                "nocheckcertificate": True,
-                "ignoreerrors": True,
-                "no_color": True,
-                "extractor_retries": 5,
-                "socket_timeout": 30,
-            }
-
-            # Options spécifiques selon le type de téléchargement
-            if download_type == "video":
-                # Pour la vidéo, forcer la sortie en MP4
-                ydl_opts["merge_output_format"] = "mp4"
-            else:  # Audio uniquement
-                # Pour l'audio, extraire l'audio et convertir en MP3
-                ydl_opts["extractaudio"] = True
-                ydl_opts["audioformat"] = "mp3"
-                ydl_opts["audioquality"] = audio_bitrate
-                # Options supplémentaires pour la conversion audio
-                ydl_opts["postprocessors"] = [
-                    {
-                        "key": "FFmpegExtractAudio",
-                        "preferredcodec": "mp3",
-                        "preferredquality": audio_bitrate,
-                    }
-                ]
-
-            # Télécharger avec yt-dlp
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([url])
-
-            # Vérifier le fichier téléchargé
-            file_ext = ".mp3" if download_type == "audio" else ".mp4"
-            final_path = filepath
-
-            # Si le fichier n'existe pas avec le nom prévu, chercher le fichier réel
-            if not os.path.exists(final_path):
-                files = os.listdir(local_path)
-                matching_files = [
-                    os.path.join(local_path, f) for f in files if f.endswith(file_ext)
-                ]
-
-                if matching_files:
-                    newest_file = max(
-                        matching_files, key=os.path.getctime, default=None
-                    )
-                    if newest_file:
-                        final_path = newest_file
-
-            print("Téléchargement terminé avec succès.")
-            print(f"Fichier enregistré dans: {final_path}")
-            open_file_explorer(final_path)
-
-    except Exception as e:
-        print(f"Erreur avec yt-dlp pour Odysee: {str(e)}")
-        print("Tentative avec la méthode alternative (parsing HTML)...")
-
-        # Méthode alternative: parsing HTML direct (pour vidéo seulement)
-        if download_type == "video":
-            try:
-                response = requests.get(url)
-                soup = BeautifulSoup(response.content, "html.parser")
-
-                # Extraire le titre depuis la balise title
-                title_tag = soup.find("title")
-                video_name = (title_tag.text if title_tag else "video_odysee") + ".mp4"
-                video_name = re.sub(r'[<>:"/\\|?*]', "_", video_name)
-                video_path = os.path.join(local_path, video_name)
-
-                # Vérifier si le fichier existe déjà
-                if os.path.exists(video_path):
-                    print(
-                        f"\nAttention: Le fichier '{video_name}' existe déjà dans '{local_path}'."
-                    )
-                    while True:
-                        choice = input(
-                            "Voulez-vous remplacer ce fichier ? (o/n): "
-                        ).lower()
-                        if choice in ["o", "oui", "y", "yes"]:
-                            print("Le fichier existant sera remplacé.")
-                            break
-                        elif choice in ["n", "non", "no"]:
-                            print("Téléchargement annulé.")
-                            return
-                        else:
-                            print("Veuillez répondre par 'o' (oui) ou 'n' (non).")
-
-                # Chercher l'URL de la vidéo dans les métadonnées JSON-LD
-                script_tag = soup.find("script", type="application/ld+json")
-                if script_tag and script_tag.string:
-                    json_content = json.loads(script_tag.string)
-                    video_url = json_content.get("contentUrl")
-
-                    if video_url:
-                        print("Téléchargement de la vidéo...")
-                        response = requests.get(video_url, stream=True)
-
-                        with open(video_path, "wb") as f:
-                            for chunk in response.iter_content(chunk_size=8192):
-                                if chunk:
-                                    f.write(chunk)
-
-                        print("Téléchargement terminé avec succès.")
-                        print(f"Fichier enregistré dans: {video_path}")
-                        open_file_explorer(video_path)
-                    else:
-                        print("URL de la vidéo non trouvée dans les métadonnées.")
-                else:
-                    print("Métadonnées JSON-LD non trouvées.")
-
-            except Exception as e2:
-                print(f"Erreur avec la méthode alternative: {str(e2)}")
-
-        else:  # Audio demandé mais yt-dlp a échoué
-            print("Désolé, l'extraction audio depuis Odysee nécessite yt-dlp.")
-            print(
-                "Veuillez réessayer ou vérifier que yt-dlp est correctement installé."
-            )
 
 
 def download_instagram_video(url):
@@ -1319,17 +1037,26 @@ def download_instagram_video(url):
             "extractor_retries": 10,
             "socket_timeout": 60,
             "ffmpeg_location": r"C:\ffmpeg\bin",
+            # Bypass Instagram "inappropriate content" filter
+            "age_limit": 99,
         }
 
-        # Use cookies if available
+        # Use cookies file to avoid Chrome DB lock errors
         if use_cookies:
             info_opts["cookiefile"] = cookies_file
-            print(f"Utilisation du fichier de cookies: {cookies_file}")
 
         # Extraire les informations de la vidéo sans télécharger
         with yt_dlp.YoutubeDL(info_opts) as ydl:
             print("Extraction des informations de la vidéo Instagram...")
             info = ydl.extract_info(url, download=False)
+
+            # If info is None, Instagram blocked extraction
+            if info is None:
+                raise Exception(
+                    "Instagram a bloqué l'extraction. "
+                    "Contenu restreint ou cookies expirés."
+                )
+
             video_title = info.get("title", "instagram_video")
 
             # Nettoyer le titre pour le nom de fichier
@@ -1375,6 +1102,8 @@ def download_instagram_video(url):
                 "no_color": True,
                 "extractor_retries": 10,
                 "socket_timeout": 60,
+                # Bypass Instagram "inappropriate content" filter
+                "age_limit": 99,
             }
 
             # Options spécifiques selon le type de téléchargement
@@ -1395,12 +1124,13 @@ def download_instagram_video(url):
                     }
                 ]
 
+            # Use cookies file to avoid Chrome DB lock errors
             if use_cookies:
                 ydl_opts["cookiefile"] = cookies_file
 
             # Télécharger la vidéo avec yt-dlp
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                print(f"\nTéléchargement Instagram en cours...")
+                print("\nTéléchargement Instagram en cours...")
                 ydl.download([url])
 
                 # Vérifier le fichier téléchargé
@@ -1411,7 +1141,9 @@ def download_instagram_video(url):
                 if not os.path.exists(final_path):
                     files = os.listdir(local_path)
                     matching_files = [
-                        os.path.join(local_path, f) for f in files if f.endswith(file_ext)
+                        os.path.join(local_path, f)
+                        for f in files
+                        if f.endswith(file_ext)
                     ]
 
                     if matching_files:
@@ -1443,19 +1175,24 @@ def download_instagram_video(url):
                 r"C:\ffmpeg\bin",
                 "--no-playlist",
                 "--no-check-certificate",
+                "--age-limit",
+                "99",
             ]
 
             if download_type == "video":
                 cmd.extend(["--merge-output-format", "mp4"])
             else:
-                cmd.extend([
-                    "--extract-audio",
-                    "--audio-format",
-                    "mp3",
-                    "--audio-quality",
-                    "192",
-                ])
+                cmd.extend(
+                    [
+                        "--extract-audio",
+                        "--audio-format",
+                        "mp3",
+                        "--audio-quality",
+                        "192",
+                    ]
+                )
 
+            # Use cookies file to avoid Chrome DB lock errors
             if use_cookies:
                 cmd.extend(["--cookies", cookies_file])
 
@@ -1492,7 +1229,9 @@ def download_instagram_video(url):
                 open_file_explorer(local_path)
 
         except Exception as e2:
-            print(f"Toutes les tentatives Instagram ont échoué. Erreur finale : {str(e2)}")
+            print(
+                f"Toutes les tentatives Instagram ont échoué. Erreur finale : {str(e2)}"
+            )
             return
 
 
@@ -1613,7 +1352,7 @@ def download_rumble_video(url):
         os.path.dirname(os.path.abspath(__file__)), "cookies.txt"
     )
     if os.path.exists(cookies_file):
-        cmd.extend(["--cookies", cookies_file])
+        cmd.extend(["--cookies-from-browser", "chrome"])
         print(f"Using cookies: {cookies_file}")
 
     try:
@@ -1662,7 +1401,7 @@ def download_rumble_video(url):
         traceback.print_exc()
 
 
-def download_protected_site_video(url, site_type):
+def download_protected_site_video(url, site_type, download_type="video"):
     """
     Download video from protected sites using yt-dlp specialized handling
     Uses temporary directory to avoid yt-dlp cache issues
@@ -1700,6 +1439,10 @@ def download_protected_site_video(url, site_type):
             # Method 4: Last resort - best available
             "best"
         )
+
+        if download_type == "audio":
+            format_selector = "bestaudio/best"
+            local_path = get_download_path("generic_audio")
 
         # Options for protected sites - Enhanced DASH handling
         ydl_opts = {
@@ -1767,6 +1510,18 @@ def download_protected_site_video(url, site_type):
             "youtube_include_hls_manifest": True,
         }
 
+        # Override options for audio-only download
+        if download_type == "audio":
+            ydl_opts["merge_output_format"] = "mp3"
+            ydl_opts["postprocessors"] = [
+                {
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": "192",
+                }
+            ]
+            ydl_opts.pop("postprocessor_args", None)
+
         # Add site-specific options
         if site_type == "m6":
             ydl_opts.update(
@@ -1815,8 +1570,7 @@ def download_protected_site_video(url, site_type):
             ydl_opts["impersonate"] = "chrome"  # Simulate Chrome browser
 
         if use_cookies:
-            ydl_opts["cookiefile"] = cookies_file
-            print(f"Using cookies: {cookies_file}")
+            ydl_opts["cookiesfrombrowser"] = ("chrome", None, None, None)
 
         # DIAGNOSTIC: First, list all available formats
         print("\n" + "=" * 60)
@@ -1824,10 +1578,12 @@ def download_protected_site_video(url, site_type):
         print("=" * 60)
 
         with yt_dlp.YoutubeDL(
-            {"listformats": True, "cookiefile": cookies_file if use_cookies else None}
+            {"listformats": True, "cookiesfrombrowser": ("chrome", None, None, None)}
         ) as ydl_list:
             try:
                 info = ydl_list.extract_info(url, download=False)
+                if info is None:
+                    raise Exception("Extraction des formats impossible.")
                 formats = info.get("formats", [])
 
                 print(f"\nTotal formats found: {len(formats)}")
@@ -1914,9 +1670,16 @@ def download_protected_site_video(url, site_type):
         print("=" * 60)
 
         # Now proceed with actual download
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        try:
+            ydl_instance = yt_dlp.YoutubeDL(ydl_opts)
+        except Exception:
+            ydl_opts.pop("cookiesfrombrowser", None)
+            ydl_instance = yt_dlp.YoutubeDL(ydl_opts)
+        with ydl_instance as ydl:
             # Extract info for the video title
             info = ydl.extract_info(url, download=False)
+            if info is None:
+                raise Exception("Extraction impossible pour ce site.")
             video_title = info.get("title", f"video_{site_type}")
 
             print(f"\nDownloading: {video_title}")
@@ -1927,7 +1690,7 @@ def download_protected_site_video(url, site_type):
             temp_files = [
                 f
                 for f in os.listdir(temp_dir)
-                if f.endswith((".mp4", ".mkv", ".webm", ".m4a"))
+                if f.endswith((".mp4", ".mkv", ".webm", ".m4a", ".mp3"))
             ]
 
             if temp_files:
@@ -1950,13 +1713,16 @@ def download_protected_site_video(url, site_type):
                         pattern, r"\1", clean_filename_from_temp
                     )
                     print(
-                        f"Cleaned filename: {downloaded_filename} -> {clean_filename_from_temp}"
+                        f"Cleaned filename: {downloaded_filename} -> "
+                        f"{clean_filename_from_temp}"
                     )
 
-                # Ensure MP4 extension
-                if not clean_filename_from_temp.endswith(".mp4"):
+                # Ensure correct extension based on download type
+                current_ext = os.path.splitext(clean_filename_from_temp)[1].lower()
+                expected_ext = ".mp3" if download_type == "audio" else ".mp4"
+                if current_ext != expected_ext:
                     base_name = os.path.splitext(clean_filename_from_temp)[0]
-                    clean_filename_from_temp = base_name + ".mp4"
+                    clean_filename_from_temp = base_name + expected_ext
 
                 # Create final clean filename
                 clean_final_filename = re.sub(
@@ -2034,9 +1800,7 @@ def download_protected_site_video(url, site_type):
                 "This error indicates that your yt-dlp version doesn't support this site."
             )
             print("Please update yt-dlp:")
-            print("  1. Open Command Prompt as Administrator")
-            print("  2. Run: python -m pip install --upgrade yt-dlp")
-            print("  3. Or: pip install --upgrade yt-dlp")
+            print("  Run: uv pip install --upgrade yt-dlp")
             print("\nAlternatively, the site might be blocking downloads.")
 
         import traceback
@@ -2059,6 +1823,20 @@ def download_generic_video_with_fallback(url):
     Download video from generic URL with fallback to yt-dlp if generic method fails
     OPTIMIZED: Skip generic method for protected sites
     """
+    print("\nQue souhaitez-vous télécharger ?")
+    print("1. Vidéo (avec audio)")
+    print("2. Audio uniquement (MP3)")
+    download_type = None
+    while download_type is None:
+        choice = input(
+            "\nEntrez votre choix (1-2) ou appuyez sur Entrée pour la vidéo: "
+        ).strip()
+        if not choice or choice == "1":
+            download_type = "video"
+        elif choice == "2":
+            download_type = "audio"
+        else:
+            print("Choix invalide.")
     # Check if it's a protected site FIRST - don't waste time with generic method
     site_type = detect_protected_sites(url)
 
@@ -2073,7 +1851,7 @@ def download_generic_video_with_fallback(url):
                 download_rumble_video(url)
             else:
                 # Other protected sites use the standard handler
-                download_protected_site_video(url, site_type)
+                download_protected_site_video(url, site_type, download_type)
         except Exception as e:
             print(f"Download failed for protected site: {str(e)}")
             print("Please check:")
@@ -2084,14 +1862,18 @@ def download_generic_video_with_fallback(url):
 
     # Only use generic method for truly generic/unprotected sites
     print("\nAttempting download with generic method...")
-    local_path = get_download_path("generic")
+    # Determine validation path based on download type
+    local_path = get_download_path(
+        "generic_audio" if download_type == "audio" else "generic"
+    )
 
     try:
         # Try the original generic download method
-        download_generic_video(url)
+        download_generic_video(url, download_type=download_type)
 
         # Check if the downloaded file is valid
-        files = [f for f in os.listdir(local_path) if f.endswith(".mp4")]
+        valid_exts = (".mp3",) if download_type == "audio" else (".mp4",)
+        files = [f for f in os.listdir(local_path) if f.endswith(valid_exts)]
         if files:
             latest_file = os.path.join(
                 local_path,
@@ -2116,7 +1898,7 @@ def download_generic_video_with_fallback(url):
     try:
         print("\nAttempting download with yt-dlp...")
         site_type = detect_protected_sites(url)
-        download_protected_site_video(url, site_type)
+        download_protected_site_video(url, site_type, download_type)
     except Exception as e:
         print(f"All download methods failed. Final error: {str(e)}")
         print("Please check:")
@@ -2125,8 +1907,75 @@ def download_generic_video_with_fallback(url):
         print("3. Internet connection is stable")
 
 
-def download_generic_video(url):
-    """Télécharge une vidéo depuis une URL générique"""
+def download_generic_video(url, download_type="video"):
+    """Download from a generic URL. Uses yt-dlp for audio extraction if needed."""
+    if download_type == "audio":
+        print("\nAudio-only download from generic URL (via yt-dlp)...")
+        local_path = get_download_path("generic_audio")
+
+        # Snapshot existing files before download to detect new ones reliably
+        before_files = set(os.listdir(local_path))
+
+        ydl_opts = {
+            "format": "bestaudio/best",
+            "outtmpl": os.path.join(local_path, "%(title)s.%(ext)s"),
+            "ffmpeg_location": r"C:\ffmpeg\bin",
+            "noplaylist": True,
+            "postprocessors": [
+                {
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": "192",
+                }
+            ],
+        }
+        try:
+            start_time = time.time()
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                if info is None:
+                    raise Exception("Could not extract audio info.")
+            elapsed = time.time() - start_time
+
+            # Detect new files created during download
+            after_files = set(os.listdir(local_path))
+            new_files = after_files - before_files
+
+            # Separate MP3s from residual source files (webm, m4a, etc.)
+            new_mp3s = [f for f in new_files if f.lower().endswith(".mp3")]
+            residual = [f for f in new_files if not f.lower().endswith(".mp3")]
+
+            # Clean up residual source files left by FFmpegExtractAudio
+            for leftover in residual:
+                leftover_path = os.path.join(local_path, leftover)
+                try:
+                    os.remove(leftover_path)
+                    print(f"Cleaned up source file: {leftover}")
+                except Exception as cleanup_err:
+                    print(f"Warning: could not remove {leftover}: {cleanup_err}")
+
+            if new_mp3s:
+                # Pick the most recently created MP3
+                mp3_file = max(
+                    new_mp3s,
+                    key=lambda f: os.path.getctime(os.path.join(local_path, f)),
+                )
+                mp3_path = os.path.join(local_path, mp3_file)
+                size_mb = os.path.getsize(mp3_path) / (1024 * 1024)
+
+                print(f"\nTéléchargement terminé avec succès : {mp3_file}")
+                print(f"Fichier enregistré dans: {mp3_path}")
+                print(f"Taille : {size_mb:.2f} MB")
+                print(f"Temps total : {elapsed:.2f} secondes")
+
+                # Open Explorer with the file selected (same as YouTube behaviour)
+                open_file_explorer(mp3_path)
+            else:
+                print("Warning: MP3 file not found after conversion.")
+        except Exception as e:
+            print(f"Audio download failed: {e}")
+        return
+
     print("\nTéléchargement de la vidéo depuis une URL générique...")
     local_path = get_download_path("generic")
     # Note: get_download_path crée déjà le dossier s'il n'existe pas
@@ -2284,6 +2133,12 @@ def download_generic_video(url):
 def main():
     print("\n===== Début du processus =====\n")
 
+    # Auto-update yt-dlp at startup
+    update_yt_dlp()
+
+    # Verify/export cookies if needed
+    check_and_export_cookies()
+
     result = get_url_from_clipboard()
     if not result:
         return
@@ -2294,8 +2149,6 @@ def main():
     try:
         if type_url == "youtube":
             download_youtube_video(url)
-        elif type_url == "odysee":
-            download_odysee_video(url)
         elif type_url == "instagram":
             download_instagram_video(url)
         elif type_url == "local":
