@@ -81,7 +81,7 @@ Un outil AutoHotkey pour gérer et afficher vos raccourcis clavier et améliorer
 - **Interface utilisateur intuitive** pour consulter et modifier vos raccourcis
 - **Raccourci global** (Win+Shift+/) pour ouvrir l'interface à tout moment
 - **Thème sombre** pour un confort visuel optimal
-- **Nouveau : Contrôle du microphone** avec notifications visuelles (Win+Shift+M)
+- ~~**Nouveau : Contrôle du microphone** avec notifications visuelles (Win+Shift+M)~~
 - **Nouveau : Contrôle de la veille du PC** pour empêcher l'ordinateur de se mettre en veille (Shift+Win+V)
 - **Nouveau : Menu des services d'IA** avec plus d'options (Win+Shift+I)
 
@@ -91,6 +91,7 @@ Un outil AutoHotkey pour gérer et afficher vos raccourcis clavier et améliorer
 - **Accès rapide aux IA** (Win+Shift+I) : Menu pour accéder à Claude, ChatGPT, Gemini, etc.
 - **Recherche intelligente** (Win+Shift+U) : Ouvre l'URL ou recherche le texte sélectionné
 - **Traduction rapide** (Win+Shift+T) : Traduit le texte sélectionné via Google
+- **Copie sans Markdown** (Ctrl+Shift+C) : Copie le texte sélectionné en supprimant tout formatage Markdown, ou convertit le contenu du presse-papier si aucune sélection
 
 #### OCR Traduction
 - **Capture et traduction d'écran** (Win+Q) : Capture une zone de l'écran et l'envoie à une IA pour extraction et traduction du texte
@@ -104,8 +105,9 @@ Un outil AutoHotkey pour gérer et afficher vos raccourcis clavier et améliorer
    - **Win+Shift+I** : Menu des IA
    - **Win+Shift+U** : Recherche/URL
    - **Win+Shift+T** : Traduction
+   - **Ctrl+Shift+C** : Copie sans Markdown
    - **Win+Q** : OCR et traduction d'image
-   - **Win+Shift+M** : Couper/activer le microphone
+   - ~~**Win+Shift+M** : Couper/activer le microphone~~
    - **Shift+Win+V** : Basculer le mode veille du PC
 
 ### Installation

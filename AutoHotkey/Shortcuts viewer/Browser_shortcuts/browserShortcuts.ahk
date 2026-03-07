@@ -132,7 +132,109 @@ UrlEncode(str) {
     return encodedStr
 }
 
+; Function to strip Markdown formatting
+stripMarkdown(text) {
+    s := text
+    
+    ; Obsidian-specific
+    s := RegExReplace(s, "m)^>\s*\[![\w-]+\].*$", "")
+    s := RegExReplace(s, "!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]", "")
+    s := RegExReplace(s, "\[\[([^\]|]+)(?:\|([^\]]+))?\]\]", "$2$1")
+    s := RegExReplace(s, "m)\s+\^[A-Za-z0-9-]+\s*$", "")
+    
+    ; Code blocks
+    s := RegExReplace(s, "s)(``{3,5})[\w]*\n([\s\S]*?)\1", "$2")
+    
+    ; Headings
+    s := RegExReplace(s, "m)^#{1,6}\s+", "")
+    
+    ; Bold & underline
+    s := RegExReplace(s, "\*\*(.+?)\*\*", "$1")
+    s := RegExReplace(s, "__(.+?)__", "$1")
+    
+    ; Italic
+    s := RegExReplace(s, "\*(.+?)\*", "$1")
+    s := RegExReplace(s, "_(.+?)_", "$1")
+    
+    ; Inline code
+    s := RegExReplace(s, "``([^``\r\n]+)``", "$1")
+    
+    ; Blockquotes
+    s := RegExReplace(s, "m)^>\s+", "")
+    
+    ; Horizontal rules
+    s := RegExReplace(s, "m)^[\-\*_]{3,}\s*$", "")
+    
+    ; Tables
+    s := RegExReplace(s, "m)^\|?[\s\-:|]+\|?\s*$", "")
+    s := RegExReplace(s, "m)^\|\s*", "")
+    s := RegExReplace(s, "m)\s*\|$", "")
+    s := RegExReplace(s, "\s*\|\s*", " ")
+    
+    ; Images
+    s := RegExReplace(s, "!\[([^\]]*)\]\([^)]+\)", "$1")
+    
+    ; Links
+    s := RegExReplace(s, "\[([^\]]+)\]\([^)]+\)", "$1")
+    
+    ; Collapse blank lines
+    s := RegExReplace(s, "\r\n?", "`n")
+    s := RegExReplace(s, "`n{3,}", "`n`n")
+    
+    return Trim(s)
+}
+
+; Copy without Markdown formatting
+copyWithoutMarkdown() {
+    OldClipboard := A_Clipboard
+    A_Clipboard := ""
+    Send "^c"
+    
+    ; Check if there's a selection
+    if !ClipWait(0.5) {
+        ; No selection, use existing clipboard
+        if (OldClipboard != "" && Trim(OldClipboard) != "") {
+            plainText := stripMarkdown(OldClipboard)
+            A_Clipboard := plainText
+            showPopup("✓ Clipboard converted")
+        }
+        return
+    }
+    
+    ; Selection found
+    SelectedText := A_Clipboard
+    A_Clipboard := OldClipboard
+    
+    if (SelectedText != "" && Trim(SelectedText) != "") {
+        plainText := stripMarkdown(SelectedText)
+        A_Clipboard := plainText
+        showPopup("✓ Copied without Markdown")
+    }
+}
+
+; Show confirmation popup
+showPopup(message) {
+    CoordMode "Mouse", "Screen"
+    MouseGetPos &mouseX, &mouseY
+    
+    popup := Gui("+AlwaysOnTop -Caption +ToolWindow")
+    popup.BackColor := "2D2D30"
+    popup.SetFont("s10 cWhite", "Segoe UI")
+    popup.AddText("x10 y8 w200 Center", message)
+    
+    popupX := mouseX - 100
+    popupY := mouseY - 60
+    if (popupY < 0)
+        popupY := mouseY + 20
+    if (popupX < 0)
+        popupX := 0
+    
+    popup.Show("x" . popupX . " y" . popupY . " w220 h35 NoActivate")
+    SetTimer(() => popup.Destroy(), -1500)
+}
+
 ; Hotkey definitions
 #+i:: openInAI()
 #+u:: openUrlOrSearch()
 #+t:: translateText()
+^+c:: copyWithoutMarkdown()
