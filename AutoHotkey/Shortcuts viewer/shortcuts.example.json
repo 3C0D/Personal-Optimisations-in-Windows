@@ -1,0 +1,3 @@
+{
+  "General": "## Welcome to Shortcuts Viewer!\n\nThis is your personal shortcuts reference. Edit this text to add your own shortcuts and notes.\n\n## Example Shortcuts\n\n### System\nWin+D : Show desktop\nWin+E : Open File Explorer\nWin+I : Open Settings\nCtrl+Shift+Esc : Task Manager\n\n### Browser Shortcuts (included)\nWin+Shift+I : AI Services Menu\nWin+Shift+U : Open URL or Search\nWin+Shift+T : Translate text\nCtrl+Shift+C : Copy without Markdown\n\n### This Tool\nWin+Shift+/ : Open this shortcuts viewer\nShift+Win+V : Toggle sleep mode\n\n---\n\nTip: You can add any text here - shortcuts, commands, notes, etc.\nThis file is saved locally and won't be shared in git."
+}

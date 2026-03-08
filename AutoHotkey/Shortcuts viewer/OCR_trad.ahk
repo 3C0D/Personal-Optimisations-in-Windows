@@ -2,108 +2,119 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
-; Configuration - Changer ces variables pour basculer entre les services
-useGemini := false    ; true pour utiliser Gemini, false pour utiliser Mistral
+; Configuration file
+configFile := A_ScriptDir "\ocr_config.json"
 
-; Raccourci clavier: Ctrl + Win + Q
+; Load saved service or use default
+LoadOCRService() {
+    global configFile
+    if FileExist(configFile) {
+        try {
+            configText := FileRead(configFile, "UTF-8")
+            config := Jxon_Load(&configText)
+            return config.Has("service") ? config["service"] : "mistral"
+        }
+    }
+    return "mistral"  ; Default
+}
+
+; Save service choice
+SaveOCRService(service) {
+    global configFile
+    config := Map()
+    config["service"] := service
+    configText := Jxon_Dump(config, 2)
+    try {
+        FileDelete(configFile)
+    }
+    FileAppend(configText, configFile, "UTF-8")
+}
+
+; Load service at startup
+aiService := LoadOCRService()
+
+; Menu to select OCR service (Win+Q)
 #q::
 {
-    ; Définir les paramètres selon le service choisi
-    if (useGemini) {
-        chatUrl := "https://gemini.google.com/app"
-        chatWindowTitle := "Gemini"
-        promptText := "Extrais le texte de cette image. Affiche d'abord le texte original, puis sa traduction en français."
-    } else {
-        chatUrl := "https://chat.mistral.ai/chat"
-        chatWindowTitle := "Le Chat - Mistral AI"
-        promptText := "Extrais le texte de cette image. Affiche d'abord le texte original, puis sa traduction en français."
+    global aiService
+    
+    ocrMenu := Menu()
+    ocrMenu.Add("Claude (incognito)", (*) => SelectOCRService("claude"))
+    ocrMenu.Add("Mistral", (*) => SelectOCRService("mistral"))
+    ocrMenu.Add("Gemini", (*) => SelectOCRService("gemini"))
+    
+    ; Mark current service
+    switch aiService {
+        case "claude": ocrMenu.Check("Claude (incognito)")
+        case "mistral": ocrMenu.Check("Mistral")
+        case "gemini": ocrMenu.Check("Gemini")
     }
     
-    ; Dossier de destination pour les captures
-    screenshotDir := "C:\\Users\\dd200\\Pictures\\Screenshots\\"
+    ocrMenu.Show()
+}
+
+; Function to select and save service
+SelectOCRService(service) {
+    global aiService
+    aiService := service
+    SaveOCRService(service)
     
-    ; Créer le dossier s'il n'existe pas
-    if !DirExist(screenshotDir)
-        DirCreate(screenshotDir)
+    serviceName := ""
+    switch service {
+        case "claude": serviceName := "Claude"
+        case "mistral": serviceName := "Mistral"
+        case "gemini": serviceName := "Gemini"
+    }
     
-    ; Capturer une zone de l'écran
-    Sleep 300
+    ToolTip("OCR Service: " . serviceName)
+    SetTimer(() => ToolTip(), -2000)
+}
+
+; Raccourci clavier: Shift + Win + Q
++#q::
+{
+    global aiService
+    
+    ; Prompt universel pour tous les services
+    promptText := "Extract the text from this image. If the text is in French, just show the French text. Otherwise, show the original text first, then its French translation."
+    
+    ; Définir l'URL et les délais selon le service choisi
+    switch aiService {
+        case "claude":
+            chatUrl := "https://claude.ai/new?incognito"
+            waitTime := 5000  ; Claude en incognito prend plus de temps
+        case "gemini":
+            chatUrl := "https://gemini.google.com/app"
+            waitTime := 3000
+        case "mistral":
+            chatUrl := "https://chat.mistral.ai/chat"
+            waitTime := 3000
+        default:
+            chatUrl := "https://chat.mistral.ai/chat"  ; Par défaut: Mistral
+            waitTime := 3000
+    }
+    
     try {
-        ; Mémoriser l'heure actuelle pour trouver le nouveau fichier plus tard
-        startTime := A_Now
-        
-        ; Utiliser la commande intégrée de capture d'écran
-        Run "ms-screenclip:"
+        ; Déclencher l'outil de capture Windows (Win+Shift+S)
+        Send "#+s"
         
         ; Attendre que l'utilisateur fasse la capture
-        Sleep 500  ; Petit délai pour que l'outil de capture s'ouvre
-        
-        ; Attendre que le curseur change, indiquant que l'outil est prêt
-        KeyWait "LButton", "D"  ; Attendre que le bouton gauche soit enfoncé
-        KeyWait "LButton"       ; Attendre que le bouton gauche soit relâché
-        
-        ; Attendre que le fichier soit enregistré
-        Sleep 2000
-        
-        ; Trouver le fichier le plus récent créé après startTime
-        latestFile := ""
-        latestTime := 0
-        
-        ; Chercher le fichier de capture d'écran
-        loop Files, screenshotDir "*.png"
-        {
-            fileTime := FileGetTime(A_LoopFileFullPath)
-            if (fileTime > startTime && fileTime > latestTime)
-            {
-                latestTime := fileTime
-                latestFile := A_LoopFileFullPath
-            }
-        }
-        
-        if (latestFile = "")
-        {
-            ; Attendre un peu plus si aucun fichier n'est trouvé
-            Sleep 3000
-            
-            ; Essayer à nouveau de trouver le fichier
-            loop Files, screenshotDir "*.png"
-            {
-                fileTime := FileGetTime(A_LoopFileFullPath)
-                if (fileTime > startTime && fileTime > latestTime)
-                {
-                    latestTime := fileTime
-                    latestFile := A_LoopFileFullPath
-                }
-            }
-            
-            if (latestFile = "")
-                throw "Aucun fichier de capture trouvé. Veuillez réessayer."
-        }
-        
-        ; Copier l'image dans le presse-papiers
-        if !FileExist(latestFile)
-            throw "Fichier de capture introuvable: " latestFile
-            
-        Clipboard := "" ; Vider le presse-papiers
-        Clipboard := FileRead(latestFile)
-        
-        ; Ouvrir le chat IA dans le navigateur
-        Run chatUrl
-        if !WinWait(chatWindowTitle,, 30)
-            throw "Timeout lors de l'ouverture de " chatWindowTitle
-            
-        ; Activer la fenêtre du chat
-        WinActivate chatWindowTitle
-        
-        ; Attendre que la page se charge
-        Sleep 1000
-        
-        ; Coller l'image et ajouter la requête
-        Send "^v"
-        Sleep 1000
-        Send promptText
         Sleep 500
+        KeyWait "LButton", "D"
+        KeyWait "LButton"
+        Sleep 1000
+        
+        ; Ouvrir le chat IA
+        Run chatUrl
+        Sleep waitTime  ; Délai adapté au service
+        
+        ; Envoyer le prompt d'abord, puis l'image
+        Send promptText
+        Sleep 200  ; Petit délai minimal
+        Send "^v"  ; Coller l'image après le texte
+        Sleep 2500  ; Attendre que l'image soit collée
         Send "{Enter}"
+        
     } catch Error as e {
         MsgBox "Erreur: " e.Message, "OCR Traduction", "IconX"
     }

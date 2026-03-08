@@ -62,6 +62,7 @@ Un outil puissant pour télécharger des vidéos et de l'audio depuis YouTube, O
 ### Installation
 
 Aucune installation manuelle n'est nécessaire. Le script gère automatiquement :
+
 - La création d'un environnement virtuel Python
 - L'installation des modules requis (yt-dlp, pyperclip, etc.)
 - La mise à jour de yt-dlp
@@ -81,21 +82,25 @@ Un outil AutoHotkey pour gérer et afficher vos raccourcis clavier et améliorer
 - **Interface utilisateur intuitive** pour consulter et modifier vos raccourcis
 - **Raccourci global** (Win+Shift+/) pour ouvrir l'interface à tout moment
 - **Thème sombre** pour un confort visuel optimal
-- ~~**Nouveau : Contrôle du microphone** avec notifications visuelles (Win+Shift+M)~~
-- **Nouveau : Contrôle de la veille du PC** pour empêcher l'ordinateur de se mettre en veille (Shift+Win+V)
-- **Nouveau : Menu des services d'IA** avec plus d'options (Win+Shift+I)
+- **Contrôle de la veille du PC** pour empêcher l'ordinateur de se mettre en veille (Shift+Win+V)
+- **Menu des services d'IA** avec accès rapide à Claude, ChatGPT, Gemini, etc. (Win+Shift+I)
+- **Copie sans formatage Markdown** pour nettoyer le texte copié (Ctrl+Shift+C)
+- **Sélection du service OCR** pour choisir entre Claude, Mistral ou Gemini (Win+Q)
 
 ### Applications incluses
 
 #### Browser Shortcuts
+
 - **Accès rapide aux IA** (Win+Shift+I) : Menu pour accéder à Claude, ChatGPT, Gemini, etc.
 - **Recherche intelligente** (Win+Shift+U) : Ouvre l'URL ou recherche le texte sélectionné
 - **Traduction rapide** (Win+Shift+T) : Traduit le texte sélectionné via Google
 - **Copie sans Markdown** (Ctrl+Shift+C) : Copie le texte sélectionné en supprimant tout formatage Markdown, ou convertit le contenu du presse-papier si aucune sélection
 
 #### OCR Traduction
-- **Capture et traduction d'écran** (Win+Q) : Capture une zone de l'écran et l'envoie à une IA pour extraction et traduction du texte
-- **Compatible avec Mistral AI et Gemini** : Configurable selon vos préférences
+
+- **Sélection du service OCR** (Win+Q) : Menu pour choisir entre Claude, Mistral ou Gemini (choix sauvegardé)
+- **Capture et traduction d'écran** (Shift+Win+Q) : Capture une zone de l'écran et l'envoie à l'IA sélectionnée pour extraction et traduction du texte
+- **Support multilingue** : Détecte automatiquement la langue et traduit en français si nécessaire
 
 ### Utilisation
 
@@ -106,8 +111,8 @@ Un outil AutoHotkey pour gérer et afficher vos raccourcis clavier et améliorer
    - **Win+Shift+U** : Recherche/URL
    - **Win+Shift+T** : Traduction
    - **Ctrl+Shift+C** : Copie sans Markdown
-   - **Win+Q** : OCR et traduction d'image
-   - ~~**Win+Shift+M** : Couper/activer le microphone~~
+   - **Win+Q** : Sélectionner le service OCR (Claude/Mistral/Gemini)
+   - **Shift+Win+Q** : Capture d'écran OCR et traduction
    - **Shift+Win+V** : Basculer le mode veille du PC
 
 ### Installation
@@ -125,17 +130,23 @@ Contributions to the Windows Optimization Toolkit are welcome! Here's how you ca
 
 1. **Fork the repository**
 2. **Create a feature branch**
+
    ```
    git checkout -b feature/amazing-feature
    ```
+
 3. **Commit your changes**
+
    ```
    git commit -m 'Add some amazing feature'
    ```
+
 4. **Push to the branch**
+
    ```
    git push origin feature/amazing-feature
    ```
+
 5. **Open a Pull Request**
 
 Please make sure to update tests as appropriate and follow the coding style of the project.

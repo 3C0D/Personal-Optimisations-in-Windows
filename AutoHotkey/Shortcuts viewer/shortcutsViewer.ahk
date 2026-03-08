@@ -3,14 +3,25 @@
 ;https://github.com/TheArkive/JXON_ahk2
 #Include JXON.ahk
 #Include Browser_shortcuts/browserShortcuts.ahk
-#Include Mute_micro.ahk
-; #Include OCR_trad.ahk
+#Include OCR_trad.ahk
 
 ; Global variables for sleep control
 sleepDisabled := false
 
 ; Chemin vers le fichier JSON
 filePath := A_ScriptDir "\shortcuts.json"
+exampleFilePath := A_ScriptDir "\shortcuts.example.json"
+
+; Initialize shortcuts file if it doesn't exist
+if !FileExist(filePath) {
+    if FileExist(exampleFilePath) {
+        ; Copy example file to shortcuts.json
+        FileCopy(exampleFilePath, filePath)
+    } else {
+        ; Create default file if example doesn't exist
+        FileAppend('{"General": "## Welcome to Shortcuts Viewer!\n\nAdd your shortcuts here."}', filePath, "UTF-8")
+    }
+}
 
 ; Raccourci pour ouvrir l'interface (Win+Shift+/)
 #+/:: ShowShortcutsGUI()
@@ -19,6 +30,23 @@ filePath := A_ScriptDir "\shortcuts.json"
 +#v:: ToggleSleepMode()
 
 ; Inclure les raccourcis personnels
+
+; Generate built-in shortcuts section
+GetBuiltInShortcuts() {
+    shortcuts := ""
+    shortcuts .= "## Shortcuts Viewer`n"
+    shortcuts .= "Win+Shift+/     : Open this shortcuts viewer`n"
+    shortcuts .= "Shift+Win+V     : Toggle sleep mode (prevent/allow PC sleep)`n`n"
+    shortcuts .= "## Browser Shortcuts`n"
+    shortcuts .= "Win+Shift+I     : AI Services Menu (Claude, ChatGPT, Gemini, etc.)`n"
+    shortcuts .= "Win+Shift+U     : Open URL or search selected text/clipboard`n"
+    shortcuts .= "Win+Shift+T     : Translate text via Google`n"
+    shortcuts .= "Ctrl+Shift+C    : Copy without Markdown formatting`n`n"
+    shortcuts .= "## OCR Translation`n"
+    shortcuts .= "Win+Q           : Select OCR service (Claude/Mistral/Gemini)`n"
+    shortcuts .= "Shift+Win+Q     : Screen capture and translate with AI`n"
+    return shortcuts
+}
 
 ShowShortcutsGUI() {
     global filePath
@@ -29,8 +57,8 @@ ShowShortcutsGUI() {
     jsonText := FileRead(filePath, "UTF-8")
     data := jxon_load(&jsonText)
 
-    ; Utiliser une valeur par défaut vide si "General" n'est pas trouvé
-    displayText := data.Has("General") ? data["General"] : ""
+    ; Get user's personal shortcuts
+    userText := data.Has("General") ? data["General"] : ""
 
     ShortcutsGUI := Gui()
     ShortcutsGUI.Opt("+AlwaysOnTop")
@@ -38,11 +66,21 @@ ShowShortcutsGUI() {
     ShortcutsGUI.Title := "Shortcut Viewer 1.0"
 
     ShortcutsGUI.SetFont("s14 c916c35", "Segoe UI")
-    ShortcutsGUI.Add("Text", "w600", "Mes raccourcis :")
+    ShortcutsGUI.Add("Text", "w600", "Application Shortcuts (auto-generated)")
 
+    ; Built-in shortcuts (read-only)
     ShortcutsGUI.SetFont("s12 cC0C0C0", "Consolas")
-    edit := ShortcutsGUI.Add("Edit", "r30 w590 vShortcutsEdit", displayText)
-    edit.Opt("+Background2A2A2A")
+    builtInEdit := ShortcutsGUI.Add("Edit", "r10 w590 +ReadOnly", GetBuiltInShortcuts())
+    builtInEdit.Opt("+Background1A1A1A")
+
+    ; Separator
+    ShortcutsGUI.SetFont("s14 c916c35", "Segoe UI")
+    ShortcutsGUI.Add("Text", "w600", "My Shortcuts (editable)")
+
+    ; User shortcuts (editable)
+    ShortcutsGUI.SetFont("s12 cC0C0C0", "Consolas")
+    userEdit := ShortcutsGUI.Add("Edit", "r20 w590 vShortcutsEdit", userText)
+    userEdit.Opt("+Background2A2A2A")
 
     ShortcutsGUI.SetFont("s10 cC0C0C0", "Segoe UI")
     closeButton := ShortcutsGUI.Add("Button", "w100", "Fermer")
@@ -52,7 +90,7 @@ ShowShortcutsGUI() {
     ShortcutsGUI.OnEvent("Escape", (*) => SaveAndClose(ShortcutsGUI))
 
     ShortcutsGUI.Show()
-    closeButton.Focus()
+    userEdit.Focus()
 }
 
 SaveAndClose(ShortcutsGUI) {
@@ -62,13 +100,11 @@ SaveAndClose(ShortcutsGUI) {
     data := Map()
     data["General"] := newContent
 
-    jsonText := jxon_dump(data, 2)  ; Indentation de 2 espaces pour une meilleure lisibilité
+    jsonText := jxon_dump(data, 2)
 
     try {
-        ; Ouvrir le fichier en mode écriture pour remplacer son contenu
         file := FileOpen(filePath, "w", "UTF-8")
         if !IsObject(file) {
-            ; Utiliser Error() pour générer une exception
             Error("Erreur lors de l'ouverture du fichier pour l'écriture.")
         }
         file.Write(jsonText)
