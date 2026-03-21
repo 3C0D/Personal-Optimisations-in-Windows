@@ -86,6 +86,7 @@ Un outil AutoHotkey pour gérer et afficher vos raccourcis clavier et améliorer
 - **Menu des services d'IA** avec accès rapide à Claude, ChatGPT, Gemini, etc. (Win+Shift+I)
 - **Copie sans formatage Markdown** pour nettoyer le texte copié (Ctrl+Shift+C)
 - **Sélection du service OCR** pour choisir entre Claude, Mistral ou Gemini (Win+Q)
+- **Toggle toujours-au-dessus** pour épingler/détacher une fenêtre (Ctrl+Win+T)
 
 ### Applications incluses
 
@@ -114,6 +115,7 @@ Un outil AutoHotkey pour gérer et afficher vos raccourcis clavier et améliorer
    - **Win+Q** : Sélectionner le service OCR (Claude/Mistral/Gemini)
    - **Shift+Win+Q** : Capture d'écran OCR et traduction
    - **Shift+Win+V** : Basculer le mode veille du PC
+   - **Ctrl+Win+T** : Toggle always-on-top (épingler/détacher la fenêtre)
 
 ### Installation
 

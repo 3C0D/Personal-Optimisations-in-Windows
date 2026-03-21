@@ -4,6 +4,7 @@
 #Include JXON.ahk
 #Include Browser_shortcuts/browserShortcuts.ahk
 #Include OCR_trad.ahk
+#Include Unpin_window.ahk
 
 ; Global variables for sleep control
 sleepDisabled := false
@@ -41,7 +42,8 @@ GetBuiltInShortcuts() {
     shortcuts .= "Win+Shift+I     : AI Services Menu (Claude, ChatGPT, Gemini, etc.)`n"
     shortcuts .= "Win+Shift+U     : Open URL or search selected text/clipboard`n"
     shortcuts .= "Win+Shift+T     : Translate text via Google`n"
-    shortcuts .= "Ctrl+Shift+C    : Copy without Markdown formatting`n`n"
+    shortcuts .= "Ctrl+Shift+C    : Copy without Markdown formatting`n"
+    shortcuts .= "Ctrl+Win+T      : Toggle always-on-top (pin/unpin window)`n`n"
     shortcuts .= "## OCR Translation`n"
     shortcuts .= "Win+Q           : Select OCR service (Claude/Mistral/Gemini)`n"
     shortcuts .= "Shift+Win+Q     : Screen capture and translate with AI`n"

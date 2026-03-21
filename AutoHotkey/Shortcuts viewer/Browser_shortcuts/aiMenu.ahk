@@ -13,6 +13,7 @@ openInAI() {
     
     ; === ASSISTANTS GÉNÉRALISTES ===
     aiMenu.Add("Claude", (*) => Run("https://claude.ai"))
+    aiMenu.Add("Claude incognito", (*) => Run("https://claude.ai/new?incognito"))
     aiMenu.Add("Minimax", (*) => Run("https://agent.minimax.io/")) 
     aiMenu.Add("ChatGPT", (*) => Run("https://chatgpt.com/"))
     aiMenu.Add("Komo", (*) => Run("https://komo.ai/"))
