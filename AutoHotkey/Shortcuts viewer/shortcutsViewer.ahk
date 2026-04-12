@@ -5,6 +5,7 @@
 #Include Browser_shortcuts/browserShortcuts.ahk
 #Include OCR_trad.ahk
 #Include Unpin_window.ahk
+#Include Toggle_microphone.ahk
 
 ; Global variables for sleep control
 sleepDisabled := false
@@ -37,7 +38,8 @@ GetBuiltInShortcuts() {
     shortcuts := ""
     shortcuts .= "## Shortcuts Viewer`n"
     shortcuts .= "Win+Shift+/     : Open this shortcuts viewer`n"
-    shortcuts .= "Shift+Win+V     : Toggle sleep mode (prevent/allow PC sleep)`n`n"
+    shortcuts .= "Shift+Win+V     : Toggle sleep mode (prevent/allow PC sleep)`n"
+    shortcuts .= "Shift+Win+M     : Toggle microphone mute`n`n"
     shortcuts .= "## Browser Shortcuts`n"
     shortcuts .= "Win+Shift+I     : AI Services Menu (Claude, ChatGPT, Gemini, etc.)`n"
     shortcuts .= "Win+Shift+U     : Open URL or search selected text/clipboard`n"

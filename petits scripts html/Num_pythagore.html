@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur de Numérologie Pythagoricienne</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        .input-group {
+            margin: 1.5rem 0;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        #resultat {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+        
+        .error {
+            color: #e74c3c;
+            margin-top: 0.5rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Numérologie Pythagoricienne</h1>
+        
+        <form id="numeroForm" onsubmit="return calculerNumerologie(event)">
+            <div class="input-group">
+                <label for="mot">Entrez un mot :</label>
+                <input type="text" id="mot" name="mot" required>
+                <div id="error" class="error">Veuillez n'utiliser que des lettres (A-Z)</div>
+            </div>
+            
+            <button type="submit">Calculer</button>
+        </form>
+        
+        <div id="resultat"></div>
+    </div>
+
+    <script>
+        // Table de correspondance lettres-nombres
+        const correspondance = {
+            'A': 1, 'J': 1, 'S': 1,
+            'B': 2, 'K': 2, 'T': 2,
+            'C': 3, 'L': 3, 'U': 3,
+            'D': 4, 'M': 4, 'V': 4,
+            'E': 5, 'N': 5, 'W': 5,
+            'F': 6, 'O': 6, 'X': 6,
+            'G': 7, 'P': 7, 'Y': 7,
+            'H': 8, 'Q': 8, 'Z': 8,
+            'I': 9, 'R': 9
+        };
+
+        // Fonction principale de calcul
+        function calculerNumerologie(event) {
+            event.preventDefault();
+            const mot = document.getElementById('mot').value.toUpperCase();
+            const errorDiv = document.getElementById('error');
+            const resultatDiv = document.getElementById('resultat');
+            
+            // Validation du mot (lettres uniquement)
+            if (!/^[A-Z]+$/.test(mot)) {
+                errorDiv.style.display = 'block';
+                resultatDiv.innerHTML = '';
+                return false;
+            }
+            
+            errorDiv.style.display = 'none';
+            
+            // Calcul de la somme des valeurs numériques
+            let somme = 0;
+            let detail = [];
+            
+            for (let lettre of mot) {
+                const valeur = correspondance[lettre];
+                somme += valeur;
+                detail.push(`${lettre}(${valeur})`);
+            }
+            
+            // Vérification des nombres maîtres
+            const nombresMaitres = [11, 22, 33];
+            let resultatFinal = somme;
+            let explication = '';
+            
+            if (!nombresMaitres.includes(somme)) {
+                // Réduction à un seul chiffre si ce n'est pas un nombre maître
+                while (resultatFinal > 9) {
+                    const ancienNombre = resultatFinal;
+                    resultatFinal = String(resultatFinal)
+                        .split('')
+                        .reduce((acc, digit) => acc + parseInt(digit), 0);
+                    explication += `<br>${ancienNombre} → ${resultatFinal}`;
+                }
+            }
+            
+            // Affichage du résultat
+            resultatDiv.innerHTML = `
+                <h3>Résultat pour le mot "${mot}" :</h3>
+                <p>Calcul détaillé : ${detail.join(' + ')} = ${somme}</p>
+                ${explication}
+                <p><strong>Nombre final : ${resultatFinal}</strong>
+                ${nombresMaitres.includes(somme) ? ' (Nombre Maître)' : ''}</p>
+            `;
+            
+            return false;
+        }
+    </script>
+</body>
+</html>

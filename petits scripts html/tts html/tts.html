@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synthèse Vocale Simple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        label,
+        input,
+        select,
+        button {
+            display: block;
+            width: 96%;
+            margin-bottom: 10px;
+        }
+
+        
+        input,
+        select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        input{
+            max-width: 96%;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Synthèse Vocale Simple</h1>
+    <form id="speech-form">
+        <label for="text-input">Texte à lire :</label>
+        <input type="text" id="text-input" required>
+
+        <label for="voice-select">Choisissez une voix :</label>
+        <select id="voice-select"></select>
+
+        <button type="submit">Lire le texte</button>
+    </form>
+
+    <script>
+        const synth = window.speechSynthesis;
+        const form = document.getElementById('speech-form');
+        const textInput = document.getElementById('text-input');
+        const voiceSelect = document.getElementById('voice-select');
+
+        function populateVoiceList() {
+            voices = synth.getVoices();
+            voiceSelect.innerHTML = '';
+            for (const voice of voices) {
+                const option = document.createElement("option");
+                option.textContent = `${voice.name} (${voice.lang})`;
+                if (voice.default) {
+                    option.textContent += " — DEFAULT";
+                }
+                option.setAttribute("data-lang", voice.lang);
+                option.setAttribute("data-name", voice.name);
+                voiceSelect.appendChild(option);
+            }
+        }
+
+        populateVoiceList();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = populateVoiceList;
+        }
+
+        form.onsubmit = (event) => {
+            event.preventDefault();
+            const utterThis = new SpeechSynthesisUtterance(textInput.value);
+            const selectedOption = voiceSelect.selectedOptions[0].getAttribute("data-name");
+            utterThis.voice = voices.find((v) => v.name === selectedOption);
+            synth.speak(utterThis);
+            textInput.blur();
+        };
+    </script>
+</body>
+
+</html>
