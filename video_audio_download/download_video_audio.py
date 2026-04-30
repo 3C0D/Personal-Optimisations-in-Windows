@@ -575,7 +575,7 @@ def download_youtube_video(url):
 
     # Use cookies if available
     if use_cookies:
-        info_opts["cookiesfrombrowser"] = ("chrome", None, None, None)
+        info_opts["cookiefile"] = cookies_file
 
     try:
         # Extraire les informations de la vidéo sans télécharger
@@ -795,15 +795,10 @@ def download_youtube_video(url):
             # Pas besoin de forcer le remplacement car on a déjà supprimé le fichier existant si nécessaire
 
             if use_cookies:
-                ydl_opts["cookiesfrombrowser"] = ("chrome", None, None, None)
+                ydl_opts["cookiefile"] = cookies_file
 
             # Télécharger la vidéo avec le format choisi
-            try:
-                ydl_instance = yt_dlp.YoutubeDL(ydl_opts)
-            except Exception:
-                ydl_opts.pop("cookiesfrombrowser", None)
-                ydl_instance = yt_dlp.YoutubeDL(ydl_opts)
-            with ydl_instance as ydl:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
                 # Vérifier le fichier réel (au cas où le nom aurait été modifié par yt-dlp)
                 file_ext = ".mp3" if download_type == "audio" else ".mp4"
@@ -946,7 +941,7 @@ def download_youtube_video(url):
             # Pas besoin de forcer le remplacement car on a déjà supprimé le fichier existant si nécessaire
 
             if use_cookies:
-                cmd.extend(["--cookies-from-browser", "chrome"])
+                cmd.extend(["--cookies", cookies_file])
 
             cmd.append(url)
 
@@ -1570,7 +1565,7 @@ def download_protected_site_video(url, site_type, download_type="video"):
             ydl_opts["impersonate"] = "chrome"  # Simulate Chrome browser
 
         if use_cookies:
-            ydl_opts["cookiesfrombrowser"] = ("chrome", None, None, None)
+            ydl_opts["cookiefile"] = cookies_file
 
         # DIAGNOSTIC: First, list all available formats
         print("\n" + "=" * 60)
@@ -1578,7 +1573,7 @@ def download_protected_site_video(url, site_type, download_type="video"):
         print("=" * 60)
 
         with yt_dlp.YoutubeDL(
-            {"listformats": True, "cookiesfrombrowser": ("chrome", None, None, None)}
+            {"listformats": True, "cookiefile": cookies_file}
         ) as ydl_list:
             try:
                 info = ydl_list.extract_info(url, download=False)
@@ -1670,12 +1665,7 @@ def download_protected_site_video(url, site_type, download_type="video"):
         print("=" * 60)
 
         # Now proceed with actual download
-        try:
-            ydl_instance = yt_dlp.YoutubeDL(ydl_opts)
-        except Exception:
-            ydl_opts.pop("cookiesfrombrowser", None)
-            ydl_instance = yt_dlp.YoutubeDL(ydl_opts)
-        with ydl_instance as ydl:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             # Extract info for the video title
             info = ydl.extract_info(url, download=False)
             if info is None:
