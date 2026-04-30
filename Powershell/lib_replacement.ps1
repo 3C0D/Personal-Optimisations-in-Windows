@@ -1,3 +1,7 @@
+# Patch mermaid.min.js embedded in QuickLook's Markdown plugin
+# First tried via dnSpy GUI, but the patch was finally done
+# using dnlib (dnSpy's CLI/API) directly through this PowerShell script.
+
 # Paths
 $dnlibPath = "C:\Users\dd200\Downloads\dnSpy-net-win64\bin\dnlib.dll"
 $dllPath    = "C:\Users\dd200\AppData\Local\Programs\QuickLook\QuickLook.Plugin\QuickLook.Plugin.MarkdownViewer\QuickLook.Plugin.MarkdownViewer.dll"
