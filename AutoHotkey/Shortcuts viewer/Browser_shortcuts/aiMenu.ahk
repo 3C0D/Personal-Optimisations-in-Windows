@@ -14,15 +14,14 @@ openInAI() {
     ; === ASSISTANTS GÉNÉRALISTES ===
     aiMenu.Add("Claude", (*) => Run("https://claude.ai"))
     aiMenu.Add("Claude incognito", (*) => Run("https://claude.ai/new?incognito"))
+    aiMenu.Add("Meta AI", (*) => Run("https://www.meta.ai/prompt")) 
     aiMenu.Add("Minimax", (*) => Run("https://agent.minimax.io/")) 
     aiMenu.Add("ChatGPT", (*) => Run("https://chatgpt.com/"))
-    aiMenu.Add("Komo", (*) => Run("https://komo.ai/"))
-    aiMenu.Add("Ernie", (*) => Run("https://ernie.baidu.com/"))
     aiMenu.Add("Gemini", (*) => Run("https://gemini.google.com/app"))
     aiMenu.Add("Copilot", (*) => Run("https://copilot.microsoft.com"))
     aiMenu.Add("Perplexity", (*) => Run("https://www.perplexity.ai/"))
     aiMenu.Add("Grok", (*) => Run("https://x.com/i/grok"))
-    ; aiMenu.Add("Poe", (*) => Run("https://poe.com"))
+    aiMenu.Add("Ernie", (*) => Run("https://ernie.baidu.com/"))
     
     aiMenu.Add() ; Separator
     
@@ -39,6 +38,7 @@ openInAI() {
     ; === RECHERCHE & SYNTHÈSE ===
     aiMenu.Add("Genspark", (*) => Run("https://www.genspark.ai/"))
     aiMenu.Add("Consensus", (*) => Run("https://consensus.app/search/"))
+    aiMenu.Add("Elicit", (*) => Run("https://elicit.com/"))
     aiMenu.Add("You.com", (*) => Run("https://you.com"))
     
     aiMenu.Add() ; Separator
@@ -49,6 +49,7 @@ openInAI() {
     aiMenu.Add("Leonardo.ai", (*) => Run("https://leonardo.ai"))
     aiMenu.Add("Ideogram", (*) => Run("https://ideogram.ai"))
     aiMenu.Add("Firefly", (*) => Run("https://firefly.adobe.com"))
+    aiMenu.Add("Flux", (*) => Run("https://fal.ai/"))
     
     aiMenu.Add() ; Separator
     
@@ -57,21 +58,29 @@ openInAI() {
     aiMenu.Add("Pika", (*) => Run("https://pika.art"))
     aiMenu.Add("HeyGen", (*) => Run("https://www.heygen.com"))
     aiMenu.Add("Luma AI", (*) => Run("https://lumalabs.ai"))
+    aiMenu.Add("Vidu", (*) => Run("https://www.vidu.com/"))
+    aiMenu.Add("Wan", (*) => Run("https://wan.video/"))
+    
+    aiMenu.Add() ; Separator
+    
+    ; === MULTIMODAL ===
+    aiMenu.Add("Kling AI", (*) => Run("https://klingai.com/"))
     
     aiMenu.Add() ; Separator
     
     ; === VOIX & AUDIO ===
     aiMenu.Add("ElevenLabs", (*) => Run("https://elevenlabs.io"))
     aiMenu.Add("Unmute", (*) => Run("https://unmute.sh/"))
-    aiMenu.Add("Maya", (*) => Run("https://www.sesame.com/research/crossing_the_uncanny_valley_of_voice#demo"))
     
     aiMenu.Add() ; Separator
     
     ; === OUTILS SPÉCIALISÉS ===
     aiMenu.Add("Google AI Studio", (*) => Run("https://aistudio.google.com/prompts/new_chat"))
-    aiMenu.Add("Cursor", (*) => Run("https://cursor.sh"))
+    aiMenu.Add("NotebookLM", (*) => Run("https://notebooklm.google.com/"))
+    aiMenu.Add("Dia", (*) => Run("https://www.diabrowser.com/"))
+    ; aiMenu.Add("Cursor", (*) => Run("https://cursor.sh"))
     aiMenu.Add("Manus", (*) => Run("https://manus.im/app"))
-    aiMenu.Add("Fragments", (*) => Run("https://fragments.e2b.dev/"))
+    ; aiMenu.Add("Fragments", (*) => Run("https://fragments.e2b.dev/"))
     
     aiMenu.Show()
 }
