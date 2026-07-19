@@ -20,12 +20,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Sync dependencies (creates venv if needed, installs/updates packages)
-echo Installing/updating dependencies...
-uv sync
-
-REM Run the script with UV
-echo.
+REM Run the script with UV (handles venv creation and dependency resolution)
 echo Starting the downloader...
 echo ================================================
 echo.

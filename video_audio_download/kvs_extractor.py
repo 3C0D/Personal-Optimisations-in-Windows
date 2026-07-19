@@ -5,22 +5,18 @@ Approches multiples pour contourner les limitations de tezfiles.com
 """
 
 import re
-import requests
-import json
-import time
-from urllib.parse import urlparse, urljoin
-from bs4 import BeautifulSoup
-import browser_cookie3
-import http.cookiejar
 import os
-import subprocess
 import sys
+
+import requests
+from bs4 import BeautifulSoup
+import http.cookiejar
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, WebDriverException
+from selenium.common.exceptions import TimeoutException
 
 
 class KVSExtractor:

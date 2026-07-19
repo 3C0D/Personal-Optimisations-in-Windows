@@ -14,14 +14,13 @@ openInAI() {
     ; === ASSISTANTS GÉNÉRALISTES ===
     aiMenu.Add("Claude", (*) => Run("https://claude.ai"))
     aiMenu.Add("Claude incognito", (*) => Run("https://claude.ai/new?incognito"))
-    aiMenu.Add("Meta AI", (*) => Run("https://www.meta.ai/prompt")) 
+    aiMenu.Add("Meta AI", (*) => Run("https://www.meta.ai/"))
     aiMenu.Add("Minimax", (*) => Run("https://agent.minimax.io/")) 
     aiMenu.Add("ChatGPT", (*) => Run("https://chatgpt.com/"))
     aiMenu.Add("Gemini", (*) => Run("https://gemini.google.com/app"))
     aiMenu.Add("Copilot", (*) => Run("https://copilot.microsoft.com"))
     aiMenu.Add("Perplexity", (*) => Run("https://www.perplexity.ai/"))
     aiMenu.Add("Grok", (*) => Run("https://grok.com/"))
-    aiMenu.Add("Ernie", (*) => Run("https://ernie.baidu.com/"))
 
     aiMenu.Add() ; Separator
 
