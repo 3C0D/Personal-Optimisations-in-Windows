@@ -6,11 +6,15 @@ per-site logic.
 """
 
 import os
+import re
 import shutil
 import sys
 import tempfile
 import subprocess
+import json
+import html
 
+import requests
 import yt_dlp
 
 from core.config import (
@@ -33,7 +37,7 @@ from core.file_utils import (
     extract_audio_from_file,
 )
 from core.ui import ask_replace_file, ask_extract_audio_from_existing, ask_video_quality
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 
 class YtdlpDownloader:
@@ -58,6 +62,10 @@ class YtdlpDownloader:
         Returns:
             str or None: Path to downloaded file, or None on failure
         """
+        # Normalize URL to get direct link for BBC Reel playlist pages,
+        # then get the expected id for verification
+        url = self._normalize_url(url)
+        expected_id = self._get_expected_video_id(url)
         site_type = self._detect_site_type(url)
         print(f"\nTraitement: {url}")
         if site_type != "generic":
@@ -73,7 +81,22 @@ class YtdlpDownloader:
             print("Tentative de téléchargement direct...")
             return self._direct_download(url, download_type, opts)
 
+        # Verify extracted video matches the expected ID (for BBC Reel playlist pages)
+        if expected_id and info.get("id") != expected_id:
+            print(
+                f"\nATTENTION : la vidéo extraite (id={info.get('id')}) ne correspond pas "
+                f"à celle demandée (id={expected_id})."
+            )
+            print(
+                "Cette page contient un carrousel et yt-dlp a extrait la mauvaise vidéo. "
+                "Ouvre la vidéo souhaitée directement dans le player BBC (clique dessus "
+                "pour qu'elle devienne la vidéo principale) puis recopie l'URL affichée "
+                "à ce moment-là, plutôt que l'URL de la page playlist."
+            )
+            return None
+
         title = info.get("title", "video")
+        print(f"Vidéo détectée : {title}")
         ext = ".mp3" if download_type == "audio" else ".mp4"
 
         # Check if file already exists
@@ -124,6 +147,102 @@ class YtdlpDownloader:
     # ------------------------------------------------------------------
     # Site detection
     # ------------------------------------------------------------------
+
+    def _get_canonical_id_from_page(self, html_text, vpid):
+        """
+        BBC Reel embeds the full playlist state as HTML-escaped JSON inside
+        <script id="initial-data" data-json="...">. Each item there has
+        smpData.items[0].versionID (the VPID from the URL) and clipPID (the
+        canonical id used in /reel/video/{id} URLs), in the same object. This
+        replaces the previous regex-proximity guess, which could pick up an
+        unrelated p0XXXXXXX id (e.g. a thumbnail image id) that happened to sit
+        near the VPID in the raw HTML text instead of reading the real mapping.
+        """
+        match = re.search(
+            r'<script[^>]*\bid="initial-data"[^>]*\bdata-json="([^"]*)"', html_text
+        )
+        if not match:
+            return None
+
+        raw_json = html.unescape(match.group(1))
+        try:
+            data = json.loads(raw_json)
+        except json.JSONDecodeError:
+            return None
+
+        items = data.get("initData", {}).get("items", [])
+        for item in items:
+            smp_items = item.get("smpData", {}).get("items", [])
+            if any(smp.get("versionID") == vpid for smp in smp_items):
+                return item.get("clipPID")
+
+        return None
+
+    def _normalize_url(self, url):
+        """
+        BBC Reel playlist URLs carry a VPID (version id) in ?vpid=, but the
+        site's carousel links use the clip's canonical PID instead, which is
+        a different but related id (BBC's own PID/VPID distinction). Fetch
+        the raw page and read the canonical PID from the embedded initial-data
+        JSON, matched by field (versionID -> clipPID) rather than by text
+        proximity, so we can build a working direct URL.
+        """
+        parsed = urlparse(url)
+        domain = parsed.netloc.lower()
+
+        if domain not in ("bbc.com", "www.bbc.com") or "/reel/playlist" not in parsed.path:
+            return url
+
+        vpid = parse_qs(parsed.query).get("vpid", [None])[0]
+        if not vpid:
+            return url
+
+        try:
+            response = requests.get(url, headers=DEFAULT_HEADERS, timeout=SOCKET_TIMEOUT)
+            response.raise_for_status()
+
+            canonical_id = self._get_canonical_id_from_page(response.text, vpid)
+            if canonical_id:
+                print(f"Playlist BBC Reel détectée, VPID {vpid} -> ID canonique {canonical_id}")
+                return f"https://www.bbc.com/reel/video/{canonical_id}"
+
+            print(f"Aucun ID canonique trouvé pour le VPID {vpid} dans les données de la page.")
+
+        except Exception as e:
+            print(f"Résolution BBC Reel échouée : {e}")
+
+        return url
+
+    def _get_expected_video_id(self, url):
+        """
+        Return the canonical PID from a BBC Reel URL for verification.
+        For playlist URLs, extracts the canonical PID from the page.
+        For direct URLs, returns the PID from the path.
+        """
+        parsed = urlparse(url)
+        domain = parsed.netloc.lower()
+
+        if domain not in ("bbc.com", "www.bbc.com"):
+            return None
+
+        # For direct video URLs, extract PID from path
+        match = re.search(r"/reel/video/([a-z0-9]+)", parsed.path)
+        if match:
+            return match.group(1)
+
+        # For playlist URLs, we need to resolve the canonical PID from VPID
+        if "/reel/playlist" in parsed.path:
+            vpid = parse_qs(parsed.query).get("vpid", [None])[0]
+            if not vpid:
+                return None
+            try:
+                response = requests.get(url, headers=DEFAULT_HEADERS, timeout=SOCKET_TIMEOUT)
+                response.raise_for_status()
+                return self._get_canonical_id_from_page(response.text, vpid)
+            except Exception:
+                return None
+
+        return None
 
     def _detect_site_type(self, url):
         """Detect site type from URL domain."""

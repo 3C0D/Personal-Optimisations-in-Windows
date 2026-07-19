@@ -1,10 +1,10 @@
 """
 yt-dlp update manager.
 Throttles updates to once per day maximum using a timestamp file.
-Uses `uv pip install -U yt-dlp` because `yt-dlp -U` refuses to self-update
+Uses `uv sync --upgrade-package yt-dlp` because `yt-dlp -U` refuses to self-update
 when the package was installed via pip (as it is here, since yt_dlp is
-imported as a library). Running `yt-dlp -U` here would silently fail
-with "You installed yt-dlp with pip..." and never actually update.
+imported as a library). Running `yt-dlp -U` would silently fail with
+"You installed yt-dlp with pip..." and never actually update.
 """
 
 import os
@@ -12,7 +12,7 @@ import time
 import subprocess
 import sys
 
-from core.config import LAST_UPDATE_FILE, UPDATE_INTERVAL_SECONDS
+from core.config import LAST_UPDATE_FILE, UPDATE_INTERVAL_SECONDS, SCRIPT_DIR
 
 
 def _read_last_update_time():
@@ -38,7 +38,7 @@ def _write_last_update_time():
 def update_yt_dlp_if_needed():
     """
     Update yt-dlp only if the last update was more than UPDATE_INTERVAL_SECONDS ago.
-    Uses `uv pip install -U yt-dlp` because `yt-dlp -U` refuses to self-update
+    Uses `uv sync --upgrade-package yt-dlp` because `yt-dlp -U` refuses to self-update
     when the package was installed via pip (as it is here, since yt_dlp is
     imported as a library). Running `yt-dlp -U` would silently fail with
     "You installed yt-dlp with pip..." and never actually update.
@@ -56,7 +56,8 @@ def update_yt_dlp_if_needed():
         print("Regular updates are necessary to bypass site API changes.")
 
         result = subprocess.run(
-            ["uv", "pip", "install", "--python", sys.executable, "-U", "yt-dlp"],
+            ["uv", "sync", "--upgrade-package", "yt-dlp"],
+            cwd=SCRIPT_DIR,
             capture_output=True,
             text=True,
             check=False,
